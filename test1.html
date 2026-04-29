@@ -128,6 +128,8 @@
   </div>
 
   <script>
+    const $ = (id) => document.getElementById(id);
+    const uid = () => (window.crypto && crypto.randomUUID) ? uid() : 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2);
     const colors = ['#f97316', '#0ea5e9', '#22c55e', '#8b5cf6', '#ef4444', '#14b8a6', '#64748b'];
     let selectedColor = colors[0];
     let page = 'home';
@@ -141,8 +143,8 @@
 
     if (state.targets.length === 0) {
       state.targets = [
-        { id: crypto.randomUUID(), name: '뚜레쥬르', wage: 10320, payday: 30, color: '#f97316' },
-        { id: crypto.randomUUID(), name: '국가근로', wage: 10320, payday: 15, color: '#0ea5e9' }
+        { id: uid(), name: '뚜레쥬르', wage: 10320, payday: 30, color: '#f97316' },
+        { id: uid(), name: '국가근로', wage: 10320, payday: 15, color: '#0ea5e9' }
       ];
       saveAll();
     }
@@ -287,12 +289,12 @@
 
     function saveTarget(e) {
       e.preventDefault();
-      state.targets.push({ id: crypto.randomUUID(), name: targetName.value.trim(), wage: Number(targetWage.value), payday: Number(targetPayday.value || 0), color: selectedColor });
+      state.targets.push({ id: uid(), name: $('targetName').value.trim(), wage: Number($('targetWage').value), payday: Number($('targetPayday').value || 0), color: selectedColor });
       saveAll(); closeModal('targetModal'); render();
     }
     function saveWork(e) {
       e.preventDefault();
-      state.works.push({ id: crypto.randomUUID(), targetId: workTarget.value, date: workDate.value, start: workStart.value, end: workEnd.value, breakMin: Number(workBreak.value || 0), wage: Number(workWage.value), memo: workMemo.value.trim() });
+      state.works.push({ id: uid(), targetId: $('workTarget').value, date: $('workDate').value, start: $('workStart').value, end: $('workEnd').value, breakMin: Number($('workBreak').value || 0), wage: Number($('workWage').value), memo: $('workMemo').value.trim() });
       saveAll(); closeModal('workModal'); render();
     }
     function deleteTarget(id) {
