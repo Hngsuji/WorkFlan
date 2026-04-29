@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>페이캘 PayCal</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Noto Sans KR", sans-serif;
+      background: #f4f6f8;
+      color: #111827;
+    }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; border: none; }
+    .app { max-width: 430px; min-height: 100vh; margin: 0 auto; background: #f8fafc; position: relative; padding-bottom: 86px; }
+    .top { background: white; padding: 22px 20px 16px; position: sticky; top: 0; z-index: 10; border-bottom: 1px solid #e5e7eb; }
+    .top-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .title { font-size: 24px; font-weight: 900; letter-spacing: -0.04em; }
+    .month-btn { background: #eef2ff; color: #2563eb; padding: 8px 12px; border-radius: 999px; font-weight: 800; }
+    .summary { margin: 16px 20px; background: linear-gradient(135deg, #2563eb, #0ea5e9); color: white; border-radius: 26px; padding: 24px; box-shadow: 0 16px 36px rgba(37,99,235,.22); }
+    .summary .label { opacity: .85; font-size: 14px; margin-bottom: 4px; }
+    .summary .money { font-size: 36px; font-weight: 950; letter-spacing: -0.04em; }
+    .summary .sub { opacity: .9; font-size: 14px; margin-top: 8px; }
+    .section { padding: 0 20px 20px; }
+    .section-title { font-size: 19px; font-weight: 900; margin: 22px 0 12px; display: flex; justify-content: space-between; align-items: center; }
+    .small { font-size: 13px; color: #64748b; font-weight: 700; }
+    .card { background: white; border: 1px solid #e5e7eb; border-radius: 20px; padding: 16px; margin-bottom: 12px; box-shadow: 0 8px 20px rgba(15,23,42,.04); }
+    .target-card { display: flex; justify-content: space-between; align-items: center; }
+    .target-left { display: flex; gap: 10px; align-items: center; min-width: 0; }
+    .dot { width: 13px; height: 13px; border-radius: 999px; flex: 0 0 auto; }
+    .target-name { font-weight: 900; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; }
+    .target-info { color: #64748b; font-size: 13px; margin-top: 2px; }
+    .target-pay { font-weight: 950; font-size: 18px; }
+    .tabs { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: min(430px, 100%); height: 72px; background: white; border-top: 1px solid #e5e7eb; display: grid; grid-template-columns: repeat(4, 1fr); z-index: 20; }
+    .tab { background: white; color: #64748b; font-weight: 900; font-size: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+    .tab.active { color: #2563eb; }
+    .tab span:first-child { font-size: 22px; }
+    .fab { position: fixed; bottom: 88px; left: calc(50% + 140px); transform: translateX(-50%); width: 58px; height: 58px; border-radius: 999px; background: #f97316; color: white; font-size: 34px; font-weight: 500; box-shadow: 0 14px 30px rgba(249,115,22,.35); z-index: 30; }
+    @media (max-width: 430px) { .fab { right: 20px; left: auto; transform: none; } }
+    .calendar { background: white; margin: 16px 20px 20px; border-radius: 24px; overflow: hidden; border: 1px solid #e5e7eb; }
+    .cal-head, .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+    .cal-head div { padding: 12px 0; text-align: center; font-weight: 900; color: #64748b; border-bottom: 1px solid #e5e7eb; }
+    .day { min-height: 76px; padding: 7px 5px; border-right: 1px solid #eef2f7; border-bottom: 1px solid #eef2f7; font-size: 13px; }
+    .day:nth-child(7n) { border-right: none; }
+    .day.muted { color: #cbd5e1; background: #fafafa; }
+    .day-num { font-weight: 900; margin-bottom: 4px; }
+    .pill { color: white; padding: 2px 5px; border-radius: 6px; font-size: 10px; font-weight: 900; margin-bottom: 3px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .payline { font-size: 10px; color: #64748b; text-align: right; font-weight: 800; margin-top: 3px; }
+    .list-item { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+    .list-item strong { font-size: 16px; }
+    .list-item p { font-size: 13px; color: #64748b; margin-top: 3px; }
+    .btn { border-radius: 14px; padding: 12px 14px; font-weight: 900; background: #2563eb; color: white; }
+    .btn.secondary { background: #eef2f7; color: #334155; }
+    .btn.danger { background: #fee2e2; color: #dc2626; }
+    .form { padding: 20px; }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 13px; color: #64748b; font-weight: 900; margin-bottom: 7px; }
+    .field input, .field select, .field textarea { width: 100%; border: 1px solid #dbe3ee; background: white; border-radius: 14px; padding: 13px; outline: none; }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .modal { position: fixed; inset: 0; background: rgba(15,23,42,.45); z-index: 50; display: none; align-items: flex-end; justify-content: center; }
+    .modal.show { display: flex; }
+    .sheet { width: min(430px, 100%); max-height: 92vh; overflow-y: auto; background: #f8fafc; border-radius: 28px 28px 0 0; }
+    .sheet-head { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; background: white; border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; }
+    .sheet-head h2 { font-size: 20px; }
+    .close { background: #eef2f7; color: #334155; width: 36px; height: 36px; border-radius: 999px; font-weight: 900; }
+    .empty { text-align: center; color: #94a3b8; padding: 32px 10px; font-weight: 800; }
+    .color-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .color-btn { width: 34px; height: 34px; border-radius: 999px; border: 3px solid transparent; }
+    .color-btn.selected { border-color: #111827; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <div class="top-row">
+        <div>
+          <div class="title">페이캘</div>
+          <div class="small">일정과 급여를 한 번에</div>
+        </div>
+        <button class="month-btn" onclick="changeMonth(0)" id="monthLabel"></button>
+      </div>
+    </header>
+
+    <main id="view"></main>
+
+    <button class="fab" onclick="openQuickAdd()">+</button>
+
+    <nav class="tabs">
+      <button class="tab active" onclick="setPage('home')" data-tab="home"><span>🏠</span><span>홈</span></button>
+      <button class="tab" onclick="setPage('calendar')" data-tab="calendar"><span>📅</span><span>달력</span></button>
+      <button class="tab" onclick="setPage('pay')" data-tab="pay"><span>💰</span><span>정산</span></button>
+      <button class="tab" onclick="setPage('targets')" data-tab="targets"><span>👥</span><span>대상</span></button>
+    </nav>
+  </div>
+
+  <div class="modal" id="targetModal">
+    <div class="sheet">
+      <div class="sheet-head"><h2>관리 대상 추가</h2><button class="close" onclick="closeModal('targetModal')">×</button></div>
+      <form class="form" onsubmit="saveTarget(event)">
+        <div class="field"><label>대상 이름</label><input id="targetName" placeholder="예: 뚜레쥬르 또는 김알바" required /></div>
+        <div class="field"><label>기본 시급</label><input id="targetWage" type="number" placeholder="예: 10320" required /></div>
+        <div class="field"><label>급여일</label><input id="targetPayday" type="number" min="1" max="31" placeholder="예: 10" /></div>
+        <div class="field"><label>색상</label><div class="color-row" id="colorRow"></div></div>
+        <button class="btn" style="width:100%">저장하기</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal" id="workModal">
+    <div class="sheet">
+      <div class="sheet-head"><h2>근무 추가</h2><button class="close" onclick="closeModal('workModal')">×</button></div>
+      <form class="form" onsubmit="saveWork(event)">
+        <div class="field"><label>대상</label><select id="workTarget" required></select></div>
+        <div class="field"><label>날짜</label><input id="workDate" type="date" required /></div>
+        <div class="two">
+          <div class="field"><label>시작</label><input id="workStart" type="time" required /></div>
+          <div class="field"><label>종료</label><input id="workEnd" type="time" required /></div>
+        </div>
+        <div class="two">
+          <div class="field"><label>휴게시간(분)</label><input id="workBreak" type="number" value="0" min="0" /></div>
+          <div class="field"><label>시급</label><input id="workWage" type="number" required /></div>
+        </div>
+        <div class="field"><label>메모</label><textarea id="workMemo" rows="3" placeholder="예: 대타근무, 마감"></textarea></div>
+        <button class="btn" style="width:100%">저장하기</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const colors = ['#f97316', '#0ea5e9', '#22c55e', '#8b5cf6', '#ef4444', '#14b8a6', '#64748b'];
+    let selectedColor = colors[0];
+    let page = 'home';
+    let current = new Date();
+    current.setDate(1);
+
+    const state = {
+      targets: JSON.parse(localStorage.getItem('paycal_targets') || '[]'),
+      works: JSON.parse(localStorage.getItem('paycal_works') || '[]')
+    };
+
+    if (state.targets.length === 0) {
+      state.targets = [
+        { id: crypto.randomUUID(), name: '뚜레쥬르', wage: 10320, payday: 30, color: '#f97316' },
+        { id: crypto.randomUUID(), name: '국가근로', wage: 10320, payday: 15, color: '#0ea5e9' }
+      ];
+      saveAll();
+    }
+
+    function saveAll() {
+      localStorage.setItem('paycal_targets', JSON.stringify(state.targets));
+      localStorage.setItem('paycal_works', JSON.stringify(state.works));
+    }
+
+    function money(n) { return Math.round(n).toLocaleString('ko-KR') + '원'; }
+    function ym() { return `${current.getFullYear()}-${String(current.getMonth()+1).padStart(2,'0')}`; }
+    function dateStr(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+    function minutesBetween(s, e) {
+      const [sh, sm] = s.split(':').map(Number); const [eh, em] = e.split(':').map(Number);
+      let start = sh * 60 + sm; let end = eh * 60 + em;
+      if (end < start) end += 24 * 60;
+      return end - start;
+    }
+    function workPay(w) { return Math.max(0, (minutesBetween(w.start, w.end) - Number(w.breakMin || 0)) / 60) * Number(w.wage || 0); }
+    function monthWorks() { return state.works.filter(w => w.date.startsWith(ym())); }
+    function totalPay(works = monthWorks()) { return works.reduce((sum, w) => sum + workPay(w), 0); }
+    function totalHours(works = monthWorks()) { return works.reduce((sum, w) => sum + Math.max(0, minutesBetween(w.start, w.end) - Number(w.breakMin || 0)) / 60, 0); }
+    function byTarget(targetId) { return monthWorks().filter(w => w.targetId === targetId); }
+    function getTarget(id) { return state.targets.find(t => t.id === id); }
+
+    function setPage(next) {
+      page = next;
+      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === page));
+      render();
+    }
+
+    function changeMonth(delta) {
+      if (delta !== 0) current.setMonth(current.getMonth() + delta);
+      render();
+    }
+
+    function render() {
+      document.getElementById('monthLabel').textContent = `${current.getFullYear()}년 ${current.getMonth()+1}월`;
+      if (page === 'home') renderHome();
+      if (page === 'calendar') renderCalendarPage();
+      if (page === 'pay') renderPay();
+      if (page === 'targets') renderTargets();
+    }
+
+    function renderHome() {
+      const works = monthWorks();
+      const today = dateStr(new Date());
+      const todayWorks = state.works.filter(w => w.date === today);
+      document.getElementById('view').innerHTML = `
+        <section class="summary"><div class="label">이번 달 총 금액</div><div class="money">${money(totalPay())}</div><div class="sub">총 ${totalHours().toFixed(1)}시간 · 근무 ${works.length}개</div></section>
+        <section class="section"><div class="section-title">대상별 금액 <span class="small">이번 달</span></div>
+          ${state.targets.map(t => targetCard(t)).join('') || '<div class="empty">대상을 먼저 추가해 주세요.</div>'}
+        </section>
+        <section class="section"><div class="section-title">오늘 근무 <span class="small">${today}</span></div>
+          ${todayWorks.map(workCard).join('') || '<div class="empty">오늘 등록된 근무가 없어요.</div>'}
+        </section>`;
+    }
+
+    function targetCard(t) {
+      const works = byTarget(t.id);
+      return `<div class="card target-card" onclick="setPage('pay')">
+        <div class="target-left"><span class="dot" style="background:${t.color}"></span><div><div class="target-name">${t.name}</div><div class="target-info">${works.length}회 · ${totalHours(works).toFixed(1)}시간</div></div></div>
+        <div class="target-pay">${money(totalPay(works))}</div>
+      </div>`;
+    }
+
+    function workCard(w) {
+      const t = getTarget(w.targetId) || { name: '삭제된 대상', color: '#64748b' };
+      return `<div class="card list-item"><div><strong><span class="dot" style="background:${t.color}"></span>${t.name}</strong><p>${w.date} · ${w.start}~${w.end} · 휴게 ${w.breakMin || 0}분</p></div><strong>${money(workPay(w))}</strong></div>`;
+    }
+
+    function renderCalendarPage() {
+      document.getElementById('view').innerHTML = `
+        <section class="section" style="padding-top:16px"><div class="top-row"><button class="btn secondary" onclick="current.setMonth(current.getMonth()-1);render()">‹ 이전</button><button class="btn secondary" onclick="current.setMonth(current.getMonth()+1);render()">다음 ›</button></div></section>
+        ${calendarHtml()}`;
+    }
+
+    function calendarHtml() {
+      const year = current.getFullYear(), month = current.getMonth();
+      const first = new Date(year, month, 1);
+      const start = new Date(first); start.setDate(1 - first.getDay());
+      let days = [];
+      for (let i=0; i<42; i++) { const d = new Date(start); d.setDate(start.getDate()+i); days.push(d); }
+      return `<div class="calendar"><div class="cal-head"><div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div></div><div class="cal-grid">
+        ${days.map(d => {
+          const ds = dateStr(d); const works = state.works.filter(w => w.date === ds); const muted = d.getMonth() !== month;
+          return `<div class="day ${muted ? 'muted' : ''}" onclick="openWorkModal('${ds}')"><div class="day-num">${d.getDate()}</div>${works.slice(0,2).map(w => { const t=getTarget(w.targetId)||{}; return `<div class="pill" style="background:${t.color || '#64748b'}">${t.name || ''} ${((minutesBetween(w.start,w.end)-Number(w.breakMin||0))/60).toFixed(0)}시간</div>` }).join('')}${works.length ? `<div class="payline">${money(totalPay(works))}</div>` : ''}</div>`;
+        }).join('')}
+      </div></div>`;
+    }
+
+    function renderPay() {
+      document.getElementById('view').innerHTML = `
+        <section class="summary"><div class="label">${current.getFullYear()}년 ${current.getMonth()+1}월 정산</div><div class="money">${money(totalPay())}</div><div class="sub">총 ${totalHours().toFixed(1)}시간</div></section>
+        <section class="section"><div class="section-title">급여 상세</div>
+          ${state.targets.map(t => {
+            const works = byTarget(t.id);
+            return `<div class="card"><div class="target-card"><div class="target-left"><span class="dot" style="background:${t.color}"></span><div><div class="target-name">${t.name}</div><div class="target-info">${Number(t.wage).toLocaleString()}원 × ${totalHours(works).toFixed(1)}시간</div></div></div><div class="target-pay">${money(totalPay(works))}</div></div></div>`;
+          }).join('')}
+        </section>
+        <section class="section"><div class="section-title">근무 내역</div>${monthWorks().sort((a,b)=>a.date.localeCompare(b.date)).map(workCard).join('') || '<div class="empty">근무 내역이 없어요.</div>'}</section>`;
+    }
+
+    function renderTargets() {
+      document.getElementById('view').innerHTML = `
+        <section class="section" style="padding-top:20px"><button class="btn" style="width:100%" onclick="openTargetModal()">관리 대상 추가</button></section>
+        <section class="section"><div class="section-title">관리 대상</div>
+          ${state.targets.map(t => `<div class="card target-card"><div class="target-left"><span class="dot" style="background:${t.color}"></span><div><div class="target-name">${t.name}</div><div class="target-info">시급 ${Number(t.wage).toLocaleString()}원 · 급여일 ${t.payday || '-'}일</div></div></div><button class="btn danger" onclick="deleteTarget('${t.id}')">삭제</button></div>`).join('') || '<div class="empty">대상이 없어요.</div>'}
+        </section>`;
+    }
+
+    function openQuickAdd() {
+      if (page === 'targets' || state.targets.length === 0) openTargetModal();
+      else openWorkModal(dateStr(new Date()));
+    }
+    function openTargetModal() {
+      selectedColor = colors[0];
+      document.getElementById('targetName').value = '';
+      document.getElementById('targetWage').value = '';
+      document.getElementById('targetPayday').value = '';
+      renderColors();
+      document.getElementById('targetModal').classList.add('show');
+    }
+    function renderColors() {
+      document.getElementById('colorRow').innerHTML = colors.map(c => `<button type="button" class="color-btn ${c===selectedColor?'selected':''}" style="background:${c}" onclick="selectedColor='${c}';renderColors()"></button>`).join('');
+    }
+    function openWorkModal(date) {
+      if (state.targets.length === 0) return openTargetModal();
+      document.getElementById('workTarget').innerHTML = state.targets.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+      document.getElementById('workDate').value = date;
+      document.getElementById('workStart').value = '09:00';
+      document.getElementById('workEnd').value = '18:00';
+      document.getElementById('workBreak').value = '60';
+      document.getElementById('workWage').value = state.targets[0].wage;
+      document.getElementById('workMemo').value = '';
+      document.getElementById('workTarget').onchange = e => {
+        const t = getTarget(e.target.value); if (t) document.getElementById('workWage').value = t.wage;
+      };
+      document.getElementById('workModal').classList.add('show');
+    }
+    function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+    function saveTarget(e) {
+      e.preventDefault();
+      state.targets.push({ id: crypto.randomUUID(), name: targetName.value.trim(), wage: Number(targetWage.value), payday: Number(targetPayday.value || 0), color: selectedColor });
+      saveAll(); closeModal('targetModal'); render();
+    }
+    function saveWork(e) {
+      e.preventDefault();
+      state.works.push({ id: crypto.randomUUID(), targetId: workTarget.value, date: workDate.value, start: workStart.value, end: workEnd.value, breakMin: Number(workBreak.value || 0), wage: Number(workWage.value), memo: workMemo.value.trim() });
+      saveAll(); closeModal('workModal'); render();
+    }
+    function deleteTarget(id) {
+      if (!confirm('이 대상을 삭제할까요? 연결된 근무 내역도 함께 삭제됩니다.')) return;
+      state.targets = state.targets.filter(t => t.id !== id);
+      state.works = state.works.filter(w => w.targetId !== id);
+      saveAll(); render();
+    }
+
+    render();
+  </script>
+</body>
+</html>
